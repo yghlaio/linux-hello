@@ -1,0 +1,11 @@
+# Test artifacts
+test_venv/
+.pytest_cache/
+test_coverage/
+.coverage
+htmlcov/
+*.pyc
+__pycache__/
+*.db
+*.log
+.encryption_key

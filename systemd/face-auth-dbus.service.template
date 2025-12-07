@@ -1,0 +1,15 @@
+[Unit]
+Description=Face Authentication D-Bus Service
+After=graphical.target dbus.service
+
+[Service]
+Type=simple
+ExecStart={{PYTHON_PATH}} {{PROJECT_DIR}}/dbus_service.py
+Restart=on-failure
+RestartSec=5
+User={{USER}}
+Environment="DISPLAY=:0"
+Environment="XAUTHORITY=/home/{{USER}}/.Xauthority"
+
+[Install]
+WantedBy=default.target

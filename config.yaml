@@ -1,0 +1,79 @@
+# Face Authentication System Configuration
+
+# Linux Hello - Face Authentication Configuration
+# This is an EXAMPLE configuration file
+# Copy to ~/.config/face-auth/config.yaml and customize for your system
+
+# Camera settings
+camera:
+  device_id: 0  # Camera device: 0, 1, 2... or "/dev/video0", "/dev/video1"...
+  width: 640
+  height: 480
+  fps: 30
+
+# Face recognition settings
+recognition:
+  tolerance: 0.6  # Lower = more strict (0.0-1.0)
+  model: "hog"  # "hog" (faster, CPU) or "cnn" (more accurate, GPU)
+  num_jitters: 1  # Number of times to re-sample face for encoding (higher = more accurate but slower)
+  security_mode: "balanced"  # "fast", "balanced", or "secure"
+  # Security modes:
+  # - fast: tolerance 0.7, match 1 sample, quick authentication
+  # - balanced: tolerance 0.6, match 2 samples, recommended
+  # - secure: tolerance 0.5, match 3 samples, slower but more secure
+  
+# Enrollment settings
+enrollment:
+  num_samples: 5  # Number of face samples to capture during enrollment
+  sample_delay: 1.0  # Seconds between samples
+
+# Monitoring settings
+monitoring:
+  enabled: true
+  check_interval: 2.0  # Seconds between face checks
+  absence_timeout: 30.0  # Seconds before triggering absence action
+  presence_timeout: 5.0  # Seconds of presence required to cancel absence action
+  
+# Actions to perform on events
+actions:
+  on_absence:
+    - lock_screen
+    # - suspend
+    # - custom_script: /path/to/script.sh
+  on_presence:
+    # - custom_script: /path/to/script.sh
+    - log
+  on_auth_success:
+    - log
+  on_auth_failure:
+    - log
+
+# Security settings
+security:
+  max_auth_attempts: 3
+  lockout_duration: 300  # Seconds to wait after max attempts
+  require_liveness: false  # Anti-spoofing (experimental)
+
+# Database settings
+database:
+  path: "~/.local/share/face-auth/face_auth.db"
+
+# Logging settings
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+  file: "~/.local/share/face-auth/face_auth.log"
+  max_size: 10485760  # 10MB
+  backup_count: 3
+
+# D-Bus settings
+dbus:
+  enabled: true
+  service_name: "org.faceauth.Service"
+  object_path: "/org/faceauth/Service"
+
+# Event hooks
+hooks:
+  on_presence: []
+  on_absence: []
+  on_auth_success: []
+  on_auth_failure: []
