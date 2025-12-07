@@ -22,7 +22,7 @@
 
 > **🤖 AI-Generated Code**: This project was created with the assistance of AI (Google Gemini). While functional, it may contain bugs or security issues. Use at your own risk.
 
-> **⚖️ No Warranty**: This software is provided "AS IS" without warranty of any kind, express or implied. See the [LICENSE](#license) for full details.
+> **⚖️ No Warranty**: This software is provided "AS IS" without warranty of any kind, express or implied. See the [LICENSE](LICENSE) file for full details.
 
 > **🔒 Security Notice**: Face recognition is NOT as secure as a password. This is a convenience feature, not a security feature. Always maintain password-based authentication as a fallback.
 
