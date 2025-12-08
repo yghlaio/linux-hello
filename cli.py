@@ -6,15 +6,54 @@ Command-line interface for Face Authentication System
 import argparse
 import sys
 import logging
+import warnings
 from pathlib import Path
 import subprocess
 import os
+import pwd
+
+# Suppress pkg_resources warning from face_recognition_models
+warnings.filterwarnings("ignore", category=UserWarning, module='face_recognition_models')
 
 from config import get_config, reload_config
 from models import Database
 from face_auth import FaceAuthenticator
 
 logger = logging.getLogger(__name__)
+
+
+def drop_privileges():
+    """
+    Drop root privileges if running as root but for a specific user.
+    Useful for sudo/PAM usage to ensure config/DB are accessed as the user.
+    """
+    if os.geteuid() == 0:
+        # Check if we should drop to a specific user
+        target_user = os.environ.get('PAM_USER') or os.environ.get('SUDO_USER')
+        
+        if target_user:
+            try:
+                pw = pwd.getpwnam(target_user)
+                
+                # Check ownership of home dir to be sure
+                # (Optional, but good safety)
+                
+                # Change Group ID first
+                os.setgid(pw.pw_gid)
+                # Change User ID
+                os.setuid(pw.pw_uid)
+                
+                # Update environment variables
+                os.environ['HOME'] = pw.pw_dir
+                os.environ['USER'] = target_user
+                
+                # Note: We can't update LOGNAME usually, but HOME is the critical one for config
+                
+                # logger might not be setup yet, so print
+                # print(f"Dropped privileges to {target_user}")
+                
+            except Exception as e:
+                print(f"Warning: Failed to drop privileges to {target_user}: {e}")
 
 
 def setup_logging(verbose: bool = False):
@@ -122,7 +161,50 @@ def cmd_test(args):
         return 0
     else:
         print(f"\n❌ Authentication failed!\n")
+        return 0
+
+
+def cmd_pam_authenticate(args):
+    """Authenticate via PAM (pam_exec)"""
+    # Get user from PAM environment variable
+    pam_user = os.environ.get('PAM_USER')
+    
+    if not pam_user:
+        # Fallback to argument if provided (for testing)
+        pam_user = args.username
+        
+    if not pam_user:
+        print("Error: No user specified (PAM_USER not set)")
         return 1
+        
+    config = get_config()
+    db = Database(config.get('database.path'))
+    
+    # Check if user is enrolled
+    user_model = db.get_user(pam_user)
+    if not user_model:
+        # User not enrolled
+        print(f"Face Auth: User {pam_user} not enrolled. Skipping.")
+        return 1
+    
+    # Authenticate
+    authenticator = FaceAuthenticator(db)
+    
+    print(f"Face Auth: Authenticating {pam_user}...")
+    
+    # Start authentication (no preview for PAM)
+    # Use a shorter timeout for PAM to avoid stalling boot too long
+    success, username, confidence = authenticator.authenticate(
+        timeout=10,
+        show_preview=False
+    )
+    
+    if success and username == pam_user:
+        print(f"Face Auth: Success! (Confidence: {confidence:.2%})")
+        return 0  # Success
+    else:
+        print("Face Auth: Failed or timed out.")
+        return 1  # Failure (PAM will fallback or deny)
 
 
 def cmd_start_monitor(args):
@@ -244,6 +326,9 @@ def cmd_config(args):
 
 def main():
     """Main CLI entry point"""
+    # Auto-drop privileges if running as root via sudo/PAM
+    drop_privileges()
+
     parser = argparse.ArgumentParser(
         description='Face Authentication System for Linux',
         formatter_class=argparse.RawDescriptionHelpFormatter
@@ -280,6 +365,11 @@ def main():
                             help='Disable camera preview')
     test_parser.set_defaults(func=cmd_test)
     
+    # PAM Authenticate command (for pam_exec)
+    pam_parser = subparsers.add_parser('pam-authenticate', help='Internal PAM authentication')
+    pam_parser.add_argument('username', nargs='?', help='Username (optional override)')
+    pam_parser.set_defaults(func=cmd_pam_authenticate)
+
     # Start monitor command
     start_parser = subparsers.add_parser('start-monitor', 
                                         help='Start monitoring daemon')

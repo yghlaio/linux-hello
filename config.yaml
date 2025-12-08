@@ -17,6 +17,10 @@ recognition:
   model: "hog"  # "hog" (faster, CPU) or "cnn" (more accurate, GPU)
   num_jitters: 1  # Number of times to re-sample face for encoding (higher = more accurate but slower)
   security_mode: "balanced"  # "fast", "balanced", or "secure"
+  # Performance tuning
+  scale_factor: 0.5  # Downscale frame for faster detection (0.25=fastest, 1.0=full res)
+  skip_frames: 0  # Skip N frames between checks (0=check every frame)
+  try_rotations: false  # Try 90°, 180°, 270° rotations during auth (slower but handles rotated camera/face)
   # Security modes:
   # - fast: tolerance 0.7, match 1 sample, quick authentication
   # - balanced: tolerance 0.6, match 2 samples, recommended

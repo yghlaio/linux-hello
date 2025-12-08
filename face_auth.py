@@ -40,6 +40,11 @@ class FaceAuthenticator:
         self.model = self.config.get('recognition.model', 'hog')
         self.num_jitters = self.config.get('recognition.num_jitters', 1)
         
+        # Performance settings
+        self.scale_factor = self.config.get('recognition.scale_factor', 0.5)  # Downscale for faster detection
+        self.skip_frames = self.config.get('recognition.skip_frames', 0)  # Skip frames for speed
+        self.try_rotations = self.config.get('recognition.try_rotations', False)  # Try 90/180/270 rotations
+        
         self.camera: Optional[cv2.VideoCapture] = None
     
     def open_camera(self) -> bool:
@@ -89,15 +94,14 @@ class FaceAuthenticator:
         
         return frame
     
-    def detect_faces(self, frame: np.ndarray) -> List[Tuple]:
+    def detect_faces(self, frame: np.ndarray, use_scaling: bool = True, try_rotations: bool = False) -> List[Tuple]:
         """
-        Detect faces in frame with rotation invariance
-        
-        Tries detection at 0°, 90°, 180°, and 270° rotations to handle
-        rotated faces or devices.
+        Detect faces in frame with optional rotation invariance
         
         Args:
             frame: Image frame (BGR format from OpenCV)
+            use_scaling: If True, scale down frame for faster detection
+            try_rotations: If True, try 90°, 180°, 270° rotations if no face found
             
         Returns:
             List of face locations (top, right, bottom, left) in original orientation
@@ -105,11 +109,23 @@ class FaceAuthenticator:
         # Convert BGR to RGB
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         
-        # Try detection at original orientation first (fastest)
-        face_locations = face_recognition.face_locations(rgb_frame, model=self.model)
+        # Optionally scale down for faster detection
+        if use_scaling and self.scale_factor < 1.0:
+            small_frame = cv2.resize(rgb_frame, (0, 0), fx=self.scale_factor, fy=self.scale_factor)
+            face_locations = face_recognition.face_locations(small_frame, model=self.model)
+            # Scale locations back to original size
+            scale = 1.0 / self.scale_factor
+            face_locations = [(int(top*scale), int(right*scale), int(bottom*scale), int(left*scale)) 
+                             for (top, right, bottom, left) in face_locations]
+        else:
+            face_locations = face_recognition.face_locations(rgb_frame, model=self.model)
         
         if len(face_locations) > 0:
             return face_locations
+        
+        # Skip rotations if not requested (faster auth)
+        if not try_rotations:
+            return []
         
         # If no faces found, try rotations
         rotations = [
@@ -230,7 +246,7 @@ class FaceAuthenticator:
                     continue
                 
                 # Detect faces
-                face_locations = self.detect_faces(frame)
+                face_locations = self.detect_faces(frame, try_rotations=True)
                 
                 if len(face_locations) == 0:
                     if show_preview:
@@ -290,6 +306,110 @@ class FaceAuthenticator:
             if show_preview:
                 cv2.destroyAllWindows()
             self.close_camera()
+
+    def enroll_user_interactive(self, username: str, callback=None) -> bool:
+        """
+        Interactive enrollment with callback for GUI updates
+        
+        Args:
+            username: Username to enroll
+            callback: Function(frame, status_text, progress) called per frame
+            
+        Returns:
+            True if enrollment successful
+        """
+        # Check if user already exists
+        existing_user = self.db.get_user(username)
+        if existing_user:
+            logger.error(f"User {username} already enrolled")
+            return False
+        
+        if not self.open_camera():
+            return False
+            
+        face_encodings = []
+        
+        # Defined angles for robust enrollment
+        phases = [
+            ("Center", "Look straight at the camera"),
+            ("Left", "Turn head slightly LEFT"),
+            ("Right", "Turn head slightly RIGHT"),
+            ("Up", "Tilt head slightly UP"),
+            ("Down", "Tilt head slightly DOWN")
+        ]
+        
+        try:
+            for i, (phase_name, instruction) in enumerate(phases):
+                captured = False
+                start_phase = time.time()
+                
+                while not captured:
+                    # Check for timeout (30 seconds per phase)
+                    if time.time() - start_phase > 30:
+                        if callback:
+                            callback(None, "Timeout waiting for face", 0)
+                        return False
+                        
+                    frame = self.capture_frame()
+                    if frame is None:
+                        continue
+                        
+                    # Detect faces
+                    face_locations = self.detect_faces(frame, try_rotations=True)
+                    
+                    status = f"{instruction}"
+                    color = (255, 255, 255)
+                    
+                    if len(face_locations) == 0:
+                        status = "No face detected"
+                        color = (0, 0, 255)
+                    elif len(face_locations) > 1:
+                        status = "Multiple faces detected"
+                        color = (0, 0, 255)
+                    else:
+                        # Good face detected
+                        status = "Hold steady..."
+                        color = (0, 255, 0)
+                        
+                        # Draw box on frame for preview
+                        top, right, bottom, left = face_locations[0]
+                        cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
+                        
+                        # Capture logic: specific to phase? 
+                        # For now, just require a clear face for 1 second continuously?
+                        # Or just take one good frame after a delay?
+                        # Let's simple it: unique valid frame
+                        
+                        encoding = self.encode_face(frame, face_locations[0])
+                        if encoding is not None:
+                            face_encodings.append(encoding)
+                            captured = True
+                            # Brief pause/success feedback
+                            if callback:
+                                # Show success for a moment
+                                cv2.putText(frame, "Captured!", (10, 60), 
+                                          cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+                                callback(frame, f"Captured {phase_name}!", (i + 1) / len(phases) * 100)
+                            time.sleep(0.5)
+                            continue
+
+                    # Send update to GUI
+                    if callback:
+                        # Resize frame for GUI if needed, or pass raw
+                        # Convert to RGB for PIL
+                        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                        callback(rgb_frame, status, (i) / len(phases) * 100)
+                    
+                    # Allow cancellation via callback return value?
+                    # interactive implementation implies running in a thread
+                    
+            # Save to database
+            self.db.add_user(username, face_encodings)
+            logger.info(f"Successfully enrolled {username}")
+            return True
+            
+        finally:
+            self.close_camera()
     
     def authenticate(self, timeout: float = 10.0, show_preview: bool = False) -> Tuple[bool, Optional[str], Optional[float]]:
         """
@@ -331,8 +451,8 @@ class FaceAuthenticator:
                 if frame is None:
                     continue
                 
-                # Detect faces
-                face_locations = self.detect_faces(frame)
+                # Detect faces (use rotation detection if configured)
+                face_locations = self.detect_faces(frame, try_rotations=self.try_rotations)
                 
                 if len(face_locations) == 0:
                     if show_preview:

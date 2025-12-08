@@ -110,7 +110,7 @@ The installation modifies:
 
 Example configuration line:
 ```
-auth    sufficient    pam_python.so pam_face_auth.py
+auth    sufficient    pam_exec.so quiet stdout /usr/local/bin/face-auth pam-authenticate
 ```
 
 **sufficient** means:
@@ -119,10 +119,8 @@ auth    sufficient    pam_python.so pam_face_auth.py
 
 ### Timeout Settings
 
-Edit `pam/pam_face_auth.py`:
-```python
-timeout = 15  # Seconds to wait for face
-```
+The PAM authentication timeout is set in the CLI. By default it's 10 seconds.
+This can be adjusted in the `cmd_pam_authenticate` function in `cli.py`.
 
 ### Enable/Disable for Specific Services
 
@@ -131,7 +129,7 @@ To add face auth to other services:
 sudo nano /etc/pam.d/SERVICE_NAME
 
 # Add before the password line:
-auth    sufficient    pam_python.so pam_face_auth.py
+auth    sufficient    pam_exec.so quiet stdout /usr/local/bin/face-auth pam-authenticate
 ```
 
 Common services:
@@ -170,8 +168,8 @@ Common issues:
 
 ```bash
 # In emergency, remove the PAM lines
-sudo sed -i '/pam_face_auth/d' /etc/pam.d/gdm-password
-sudo sed -i '/pam_face_auth/d' /etc/pam.d/sudo
+sudo sed -i '/pam_exec.so.*face-auth/d' /etc/pam.d/gdm-password
+sudo sed -i '/pam_exec.so.*face-auth/d' /etc/pam.d/sudo
 ```
 
 ---
@@ -194,14 +192,12 @@ This will:
 
 If script fails:
 ```bash
-# Remove module
-sudo rm /lib/security/pam_face_auth.py
-
-# Remove from PAM configs
+# Remove from PAM configs (covers all install methods)
+sudo sed -i '/pam_exec.so.*face-auth/d' /etc/pam.d/*
 sudo sed -i '/pam_face_auth/d' /etc/pam.d/*
 
 # Verify
-grep -r "pam_face_auth" /etc/pam.d/
+grep -r "face-auth\|pam_face_auth" /etc/pam.d/
 ```
 
 ---
@@ -257,13 +253,13 @@ For more control, edit `/etc/pam.d/SERVICE`:
 
 ```
 # Try face auth first (sufficient)
-auth    sufficient    pam_python.so pam_face_auth.py
+auth    sufficient    pam_exec.so quiet stdout /usr/local/bin/face-auth pam-authenticate
 
 # Require password as backup (required)
 auth    required      pam_unix.so
 
 # Or make face auth required (no fallback - DANGEROUS!)
-auth    required      pam_python.so pam_face_auth.py
+auth    required      pam_exec.so quiet stdout /usr/local/bin/face-auth pam-authenticate
 ```
 
 ---

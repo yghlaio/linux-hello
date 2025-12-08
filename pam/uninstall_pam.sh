@@ -31,14 +31,34 @@ echo "Step 2: Removing PAM configuration..."
 
 # Remove from GDM
 if [ -f "$PAM_CONFIG_DIR/gdm-password" ]; then
-    sed -i '/pam_face_auth/d' "$PAM_CONFIG_DIR/gdm-password"
+    sed -i '/pam_exec.so.*face-auth/d' "$PAM_CONFIG_DIR/gdm-password"
+    sed -i '/pam_exec.so.*cli.py.*pam-authenticate/d' "$PAM_CONFIG_DIR/gdm-password"
+    sed -i '/pam_python.so.*pam_face_auth/d' "$PAM_CONFIG_DIR/gdm-password"
     echo "✅ GDM configuration cleaned"
 fi
 
 # Remove from sudo
 if [ -f "$PAM_CONFIG_DIR/sudo" ]; then
-    sed -i '/pam_face_auth/d' "$PAM_CONFIG_DIR/sudo"
+    sed -i '/pam_exec.so.*face-auth/d' "$PAM_CONFIG_DIR/sudo"
+    sed -i '/pam_exec.so.*cli.py.*pam-authenticate/d' "$PAM_CONFIG_DIR/sudo"
+    sed -i '/pam_python.so.*pam_face_auth/d' "$PAM_CONFIG_DIR/sudo"
     echo "✅ sudo configuration cleaned"
+fi
+
+# Remove from polkit-1
+if [ -f "$PAM_CONFIG_DIR/polkit-1" ]; then
+    sed -i '/pam_exec.so.*face-auth/d' "$PAM_CONFIG_DIR/polkit-1"
+    sed -i '/pam_exec.so.*cli.py.*pam-authenticate/d' "$PAM_CONFIG_DIR/polkit-1"
+    sed -i '/pam_python.so.*pam_face_auth/d' "$PAM_CONFIG_DIR/polkit-1"
+    echo "✅ polkit-1 configuration cleaned"
+fi
+
+# Remove from login
+if [ -f "$PAM_CONFIG_DIR/login" ]; then
+    sed -i '/pam_exec.so.*face-auth/d' "$PAM_CONFIG_DIR/login"
+    sed -i '/pam_exec.so.*cli.py.*pam-authenticate/d' "$PAM_CONFIG_DIR/login"
+    sed -i '/pam_python.so.*pam_face_auth/d' "$PAM_CONFIG_DIR/login"
+    echo "✅ login configuration cleaned"
 fi
 
 echo

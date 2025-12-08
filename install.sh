@@ -23,7 +23,63 @@ fi
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 echo
-echo "Step 1: Installing Python dependencies..."
+echo "Step 1: Installing system dependencies..."
+echo
+
+# Install required system libraries
+install_system_deps() {
+    if [ "$INSTALL_MODE" != "system" ]; then
+        echo "⚠️  System dependencies require root. Please run with sudo if packages are missing."
+    fi
+    
+    # Detect package manager and install dependencies
+    if command -v dnf &> /dev/null; then
+        echo "Detected Fedora/RHEL - using dnf"
+        if [ "$INSTALL_MODE" = "system" ]; then
+            dnf install -y openblas openblas-devel blas blas-devel lapack lapack-devel \
+                cmake gcc gcc-c++ python3-devel \
+                libX11-devel gtk3-devel || echo "⚠️  Some packages may have failed to install"
+        else
+            echo "Required packages: openblas openblas-devel blas blas-devel lapack lapack-devel cmake gcc gcc-c++ python3-devel"
+            echo "Install manually: sudo dnf install openblas openblas-devel blas blas-devel lapack lapack-devel cmake gcc gcc-c++ python3-devel"
+        fi
+    elif command -v apt-get &> /dev/null; then
+        echo "Detected Debian/Ubuntu - using apt"
+        if [ "$INSTALL_MODE" = "system" ]; then
+            apt-get update
+            apt-get install -y libopenblas-dev cmake build-essential python3-dev \
+                libx11-dev libgtk-3-dev || echo "⚠️  Some packages may have failed to install"
+        else
+            echo "Required packages: libopenblas-dev cmake build-essential python3-dev"
+            echo "Install manually: sudo apt install libopenblas-dev cmake build-essential python3-dev"
+        fi
+    elif command -v pacman &> /dev/null; then
+        echo "Detected Arch Linux - using pacman"
+        if [ "$INSTALL_MODE" = "system" ]; then
+            pacman -Sy --noconfirm openblas cmake gcc python || echo "⚠️  Some packages may have failed to install"
+        else
+            echo "Required packages: openblas cmake gcc python"
+            echo "Install manually: sudo pacman -S openblas cmake gcc python"
+        fi
+    else
+        echo "⚠️  Unknown package manager. Please ensure these libraries are installed:"
+        echo "   - OpenBLAS (libopenblas.so)"
+        echo "   - CMake"
+        echo "   - GCC/G++"
+        echo "   - Python development headers"
+    fi
+}
+
+# Check if libopenblas is available
+if ! ldconfig -p 2>/dev/null | grep -q libopenblas || ! command -v cmake &> /dev/null; then
+    echo "Installing required system dependencies..."
+    install_system_deps
+else
+    echo "✓ System dependencies already installed"
+fi
+
+echo
+echo "Step 2: Installing Python dependencies..."
 echo
 
 # Check if virtual environment exists
@@ -32,7 +88,8 @@ if [ -d "$SCRIPT_DIR/venv" ]; then
     source "$SCRIPT_DIR/venv/bin/activate"
 else
     echo "Creating virtual environment..."
-    python3 -m venv "$SCRIPT_DIR/venv"
+    # Use --copies to avoid symlink issues on shared folders (VMs)
+    python3 -m venv --copies "$SCRIPT_DIR/venv"
     source "$SCRIPT_DIR/venv/bin/activate"
 fi
 
@@ -44,27 +101,12 @@ echo
 echo "✓ Python dependencies installed"
 
 echo
-echo "Step 2: Creating directories..."
+echo "Step 3: Configuring system..."
 echo
 
-# Create necessary directories
-mkdir -p "$HOME/.local/share/face-auth"
-mkdir -p "$HOME/.config/face-auth"
-mkdir -p "$SYSTEMD_DIR"
+# Directory creation is handled by the application at runtime
+# to ensure correct ownership.
 
-echo "✓ Directories created"
-
-echo
-echo "Step 3: Installing configuration..."
-echo
-
-# Copy default config if user config doesn't exist
-if [ ! -f "$HOME/.config/face-auth/config.yaml" ]; then
-    cp "$SCRIPT_DIR/config.yaml" "$HOME/.config/face-auth/config.yaml"
-    echo "✓ Configuration file installed"
-else
-    echo "✓ Configuration file already exists (not overwriting)"
-fi
 
 echo
 echo "Step 4: Installing systemd services..."
@@ -115,11 +157,24 @@ echo
 echo "Step 6: Creating CLI symlink..."
 echo
 
-# Create symlink for CLI
-mkdir -p "$HOME/.local/bin"
-ln -sf "$SCRIPT_DIR/cli.py" "$HOME/.local/bin/face-auth"
+# Create launcher script
+if [ "$INSTALL_MODE" = "system" ]; then
+    LAUNCHER_DIR="/usr/local/bin"
+else
+    mkdir -p "$HOME/.local/bin"
+    LAUNCHER_DIR="$HOME/.local/bin"
+fi
 
-echo "✓ CLI symlink created at ~/.local/bin/face-auth"
+LAUNCHER="$LAUNCHER_DIR/face-auth"
+
+cat > "$LAUNCHER" << EOF
+#!/bin/bash
+exec "$SCRIPT_DIR/venv/bin/python3" "$SCRIPT_DIR/cli.py" "\$@"
+EOF
+
+chmod +x "$LAUNCHER"
+
+echo "✓ CLI launcher created at $LAUNCHER"
 
 echo
 echo "=========================================="

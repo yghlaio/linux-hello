@@ -10,6 +10,7 @@ import threading
 from pathlib import Path
 from datetime import datetime
 import logging
+from PIL import Image, ImageTk
 
 from models import Database
 from face_auth import FaceAuthenticator
@@ -19,11 +20,126 @@ from config import get_config, Config
 logger = logging.getLogger(__name__)
 
 
+class EnrollmentWizard(tk.Toplevel):
+    """Wizard for interactive face enrollment"""
+    
+    def __init__(self, parent, authenticator, username, on_complete=None):
+        super().__init__(parent)
+        self.authenticator = authenticator
+        self.username = username
+        self.on_complete = on_complete
+        
+        self.title("Face Enrollment")
+        self.geometry("600x500")
+        self.resizable(False, False)
+        
+        # UI Components
+        self.create_widgets()
+        
+        # Start enrollment in separate thread
+        self.running = True
+        self.thread = threading.Thread(target=self.run_enrollment)
+        self.thread.start()
+        
+        # Handle close
+        self.protocol("WM_DELETE_WINDOW", self.on_close)
+        
+    def create_widgets(self):
+        """Create wizard UI"""
+        main_frame = ttk.Frame(self, padding=20)
+        main_frame.pack(fill='both', expand=True)
+        
+        # Header
+        ttk.Label(main_frame, text=f"Enrolling: {self.username}", 
+                 font=('Arial', 14, 'bold')).pack(pady=10)
+        
+        # Instructions
+        self.instruction_label = ttk.Label(main_frame, 
+                                          text="Initializing camera...",
+                                          font=('Arial', 12), foreground='blue')
+        self.instruction_label.pack(pady=5)
+        
+        # Video Feed
+        self.video_frame = ttk.Frame(main_frame, borderwidth=2, relief="sunken")
+        self.video_frame.pack(pady=10)
+        
+        self.video_label = ttk.Label(self.video_frame)
+        self.video_label.pack()
+        
+        # Placeholder image
+        self.video_label.config(text="Camera loading...", width=60)
+        
+        # Progress
+        self.progress_var = tk.DoubleVar()
+        self.progress_bar = ttk.Progressbar(main_frame, variable=self.progress_var, maximum=100)
+        self.progress_bar.pack(fill='x', pady=20)
+        
+        # Status
+        self.status_label = ttk.Label(main_frame, text="Starting...", font=('Arial', 10))
+        self.status_label.pack()
+        
+        # Buttons
+        ttk.Button(main_frame, text="Cancel", command=self.on_close).pack(pady=10)
+        
+    def update_ui(self, frame, status_text, progress):
+        """Update UI from callback"""
+        if not self.running:
+            return
+            
+        # Update text/progress in main thread
+        self.after(0, lambda: self._update_widgets(frame, status_text, progress))
+        
+    def _update_widgets(self, frame, status_text, progress):
+        """Internal UI update"""
+        self.instruction_label.config(text=status_text)
+        self.progress_var.set(progress)
+        
+        if frame is not None:
+            # Convert frame to PhotoImage
+            img = Image.fromarray(frame)
+            # Resize to fit
+            img = img.resize((400, 300), Image.Resampling.LANCZOS)
+            photo = ImageTk.PhotoImage(image=img)
+            
+            self.video_label.configure(image=photo)
+            self.video_label.image = photo  # Keep reference
+            
+    def run_enrollment(self):
+        """Execute enrollment logic"""
+        success = self.authenticator.enroll_user_interactive(
+            self.username, 
+            callback=self.update_ui
+        )
+        
+        if not self.running:
+            return
+
+        self.after(0, lambda: self.finish_enrollment(success))
+        
+    def finish_enrollment(self, success):
+        """Handle completion"""
+        if success:
+            messagebox.showinfo("Success", f"Enrollment complete for {self.username}!")
+            if self.on_complete:
+                self.on_complete()
+        else:
+            messagebox.showerror("Failed", "Enrollment failed or timed out.")
+            
+        self.on_close()
+        
+    def on_close(self):
+        """Cleanup and close"""
+        self.running = False
+        # self.authenticator.close_camera() # Handled by face_auth logic
+        self.destroy()
+
+
 class FaceAuthGUI:
     """Main GUI application"""
     
     def __init__(self, root):
         self.root = root
+
         self.root.title("Face Authentication System")
         self.root.geometry("900x600")
         
@@ -276,18 +392,10 @@ class FaceAuthGUI:
                 return
             
             dialog.destroy()
-            self.root.withdraw()  # Hide main window
             
-            # Run enrollment
-            success = self.authenticator.enroll_user(username, show_preview=True)
-            
-            self.root.deiconify()  # Show main window
-            
-            if success:
-                messagebox.showinfo("Success", f"User {username} enrolled successfully!")
-                self.refresh_users()
-            else:
-                messagebox.showerror("Error", "Enrollment failed")
+            # Launch wizard
+            EnrollmentWizard(self.root, self.authenticator, username, 
+                           on_complete=self.refresh_users)
         
         ttk.Button(dialog, text="Start Enrollment", command=do_enroll).pack(pady=10)
         ttk.Button(dialog, text="Cancel", command=dialog.destroy).pack()

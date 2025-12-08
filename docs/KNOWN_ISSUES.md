@@ -200,234 +200,49 @@ monitoring:
 
 **Issue:** Face detection failed when face or device was rotated 90°, 180°, or 270°.
 
-**Solution:** Implemented multi-angle detection that tries all four orientations.
-
-**How it works:**
-1. First tries detection at original orientation (fastest)
-2. If no faces found, tries 90°, 180°, and 270° rotations
-3. Transforms coordinates back to original orientation
-4. Returns detected faces in correct position
-
-**Performance impact:**
-- No impact if face is upright (most common case)
-- Slight delay (0.5-2 seconds) if rotation needed
-- Automatically detects best orientation
+**Solution:** Implemented multi-angle detection and multi-angle enrollment wizard.
 
 **Status:** ✅ Implemented and working
 
 ---
 
-### 🟡 Medium - Appearance Changes Require Re-enrollment
+### PAM Integration
 
-**Issue:** Significant appearance changes may prevent recognition.
+### ✅ Resolved - PAM Module Setup
 
-**Triggers:**
-- Growing/shaving beard
-- Significant weight change
-- New glasses
-- Dramatic haircut
-- Aging
+**Status:** Migrated to `pam_exec.so` which is stable and reliable.
 
-**Mitigation:**
-- Add new samples: `face-auth add-sample $USER`
-- Or re-enroll: `face-auth remove $USER && face-auth enroll $USER`
-- Enroll with different appearances
+**Implementation:**
+- Uses standard `pam_exec.so` module (no custom PAM modules needed)
+- Runs `face-auth pam-authenticate` command 
+- Privilege dropping implemented for seamless sudo usage
+- Password fallback always available when face auth times out or fails
 
-**Status:** By design - biometric limitation
-
----
-
-### 🔴 Critical - No Remote Authentication
-
-**Issue:** Cannot authenticate over SSH or remote desktop.
-
-**Impact:**
-- Requires local camera access
-- Cannot use for remote login
-- SSH must use password/key
-
-**Status:** By design - requires physical presence
-
----
-
-### 🟢 Low - No Automatic Model Updates
-
-**Issue:** Face models don't automatically update over time.
-
-**Impact:**
-- Gradual aging may reduce accuracy
-- Need manual re-enrollment
-
-**Mitigation:**
-- Periodically add new samples
-- Re-enroll every 6-12 months
-
-**Status:** Future enhancement
-
----
-
-## Known Bugs
-
-### 🟡 Medium - Database Concurrency Issues
-
-**Issue:** No locking mechanism for concurrent database access.
-
-**Symptoms:**
-- Rare database corruption
-- "Database is locked" errors
-- Lost updates
-
-**Trigger:**
-- Multiple processes accessing database simultaneously
-- GUI + CLI running together
-- Monitoring daemon + manual enrollment
-
-**Workaround:**
-- Don't run multiple instances simultaneously
-- Stop monitoring before using GUI/CLI
-
-**Status:** Fix planned
-
----
-
-### 🟡 Medium - GUI Window Close Doesn't Clean Up
-
-**Issue:** Closing GUI window may not properly release camera.
-
-**Symptoms:**
-- Camera LED stays on
-- "Camera in use" errors
-- Need to restart to use camera
-
-**Workaround:**
-- Use File → Exit instead of window close button
-- Or restart system
-
-**Status:** Fix planned
-
----
-
-### 🟢 Low - Poor Camera Error Messages
-
-**Issue:** Camera errors don't provide helpful information.
-
-**Example:**
+**Configuration Example:**
 ```
-Failed to open camera 0
+auth    sufficient    pam_exec.so quiet stdout /usr/local/bin/face-auth pam-authenticate
 ```
-
-**Should say:**
-```
-Failed to open camera /dev/video0
-Possible causes:
-- Camera not connected
-- Permission denied (add user to 'video' group)
-- Camera in use by another application
-```
-
-**Status:** Enhancement planned
-
----
-
-### 🟢 Low - Monitoring Daemon High CPU Usage
-
-**Issue:** Continuous monitoring uses 5-10% CPU even when idle.
-
-**Impact:**
-- Battery drain on laptops
-- Unnecessary CPU usage
-- Heat generation
-
-**Mitigation:**
-```yaml
-# Reduce check frequency
-monitoring:
-  check_interval: 5.0  # Default is 2.0
-```
-
-**Status:** Optimization planned
-
----
-
-## PAM Integration Issues
-
-### 🔴 Critical - PAM Module Not Thoroughly Tested
-
-**Issue:** PAM integration has not been extensively tested.
-
-**Risks:**
-- May lock you out of system
-- Fallback may not work
-- Compatibility issues with different PAM configurations
-
-**Mitigation:**
-- **Test in VM first**
-- Keep backup terminal open
-- Know how to boot into recovery mode
-- Have another user account
-
-**Status:** Testing in progress
-
----
-
-### 🟡 Medium - PAM Timeout Issues
-
-**Issue:** 15-second PAM timeout may be too short on slow systems.
-
-**Symptoms:**
-- Authentication times out
-- Falls back to password every time
-
-**Workaround:**
-Edit `pam/pam_face_auth.py`:
-```python
-timeout = 30  # Increase from 15
-```
-
-**Status:** Should be configurable
 
 ---
 
 ## Platform-Specific Issues
-
-### Fedora
-
-**Issue:** Python 3.14 is default, has compatibility issues.
-
-**Status:** Workarounds in place (setuptools pinning)
-
-### Ubuntu
-
-**Issue:** May need to install `python3-tk` for GUI.
-
-**Fix:**
-```bash
-sudo apt install python3-tk
-```
-
-### Arch Linux
-
-**Issue:** Rolling release may break dependencies.
-
-**Mitigation:** Pin package versions
-
----
-
+...
 ## Comparison with Howdy
 
 ### Features We're Missing
 
-❌ **IR Camera Support** - Howdy's main advantage  
-❌ **Rotation Invariance** - Planned  
-❌ **Nod to Confirm** - Future feature  
-❌ **Mature PAM Integration** - Howdy is battle-tested  
+❌ **IR Camera Support** - Howdy's main advantage
+❌ **Nod to Confirm** - Future feature
+❌ **Mature Community** - Howdy has more users
 
 ### Features We Have
 
-✅ **GUI Application** - Howdy only has CLI + GTK config  
-✅ **Sample Management** - More granular control  
-✅ **Bash Integration** - Easy script integration  
-✅ **Comprehensive Documentation** - More detailed guides  
+✅ **GUI Application** - Howdy only has CLI + GTK config
+✅ **Multi-angle Enrollment** - Interactive wizard for robust face capture
+✅ **Rotation Invariance** - Works at any angle
+✅ **Sample Management** - More granular control
+✅ **Bash Integration** - Easy script integration
+✅ **Comprehensive Documentation** - More detailed guides
 ✅ **Event Hooks** - Custom script triggers  
 
 ---
@@ -497,12 +312,12 @@ If you encounter a bug not listed here:
 ## Future Improvements
 
 ### Planned
-- ✅ Multi-angle enrollment (in progress)
+- ✅ Multi-angle enrollment (completed)
 - ✅ Security modes (implemented)
+- ✅ PAM integration via pam_exec (stable)
 - ⏳ Database locking
 - ⏳ Better error messages
 - ⏳ GUI improvements
-- ⏳ PAM testing
 
 ### Under Consideration
 - Automatic model updates

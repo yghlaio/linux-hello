@@ -397,6 +397,16 @@ recognition:
                                   # "fast"     - tolerance 0.7, 1 match
                                   # "balanced" - tolerance 0.6, 2 matches
                                   # "secure"   - tolerance 0.5, 3 matches
+  
+  # Performance tuning
+  scale_factor: 0.5               # Downscale for faster detection
+                                  # 0.25 = fastest (lower accuracy)
+                                  # 0.5 = balanced (recommended)
+                                  # 1.0 = full resolution (slowest)
+  
+  try_rotations: false            # Try 90°/180°/270° rotations
+                                  # true = handles rotated camera/device
+                                  # false = faster, upright faces only
 
 # Enrollment Settings
 enrollment:

@@ -60,3 +60,8 @@ test_*.png
 *.tmp
 *.temp
 .cache/
+.venv/
+.mypy_cache/
+.ruff_cache/
+*.spec
+face_recognition_models/
