@@ -31,6 +31,7 @@
 ## 🌟 Features
 
 ### Core Functionality
+
 - 🔐 **Face Recognition Authentication** - Login using your face instead of passwords
 - 👁️ **Continuous Monitoring** - Automatically lock when you walk away
 - 🔄 **Rotation-Invariant** - Works even when device rotated 90°/180°/270°
@@ -39,6 +40,7 @@
 - 🔌 **Bash Integration** - Easy shell script integration
 
 ### Advanced Features
+
 - 🛡️ **TPM Storage** - Encryption keys in TPM (with file fallback)
 - 🔒 **Security Modes** - Fast/Balanced/Secure authentication levels
 - 📸 **Sample Management** - Add/remove individual face samples
@@ -55,7 +57,7 @@
 
 ```bash
 # Clone the repository
-git clone https://github.com/YOUR_USERNAME/linux-hello.git
+git clone https://github.com/rexackermann/linux-hello.git
 cd linux-hello
 
 # Run installation (auto-copies to /opt/linux-hello when using sudo)
@@ -93,13 +95,16 @@ face-auth enroll [USERNAME] [OPTIONS]
 ```
 
 **Arguments:**
+
 - `USERNAME` - Username to enroll (default: $USER)
 
 **Options:**
+
 - `--samples N` - Number of face samples to capture (default: 5)
 - `--no-preview` - Disable camera preview window
 
 **Examples:**
+
 ```bash
 # Enroll current user with 5 samples
 face-auth enroll
@@ -120,12 +125,14 @@ face-auth list
 ```
 
 **Output:**
+
 - Username
 - Enrollment date
 - Last seen timestamp
 - Number of samples
 
 **Example:**
+
 ```bash
 $ face-auth enroll
 ==========================================
@@ -150,9 +157,11 @@ face-auth remove USERNAME
 ```
 
 **Arguments:**
+
 - `USERNAME` - Username to remove
 
 **Example:**
+
 ```bash
 face-auth remove alice
 ```
@@ -170,6 +179,7 @@ face-auth add-sample USERNAME
 **Description:** Add additional face sample to existing user for improved accuracy
 
 **Example:**
+
 ```bash
 # Add sample to improve recognition
 face-auth add-sample alice
@@ -186,6 +196,7 @@ face-auth view-samples USERNAME
 **Output:** Number of samples and sample indices
 
 **Example:**
+
 ```bash
 $ face-auth view-samples alice
 User: alice
@@ -202,10 +213,12 @@ face-auth remove-sample USERNAME INDEX
 ```
 
 **Arguments:**
+
 - `USERNAME` - Username
 - `INDEX` - Sample index (from view-samples)
 
 **Example:**
+
 ```bash
 # Remove sample at index 3
 face-auth remove-sample alice 3
@@ -222,10 +235,12 @@ face-auth test [OPTIONS]
 ```
 
 **Options:**
+
 - `--timeout SECONDS` - Authentication timeout (default: 10)
 - `--no-preview` - Disable camera preview
 
 **Examples:**
+
 ```bash
 # Test with default 10 second timeout
 face-auth test
@@ -248,11 +263,13 @@ face-auth start-monitor [OPTIONS]
 ```
 
 **Options:**
+
 - `-f, --foreground` - Run in foreground (don't daemonize)
 
 **Description:** Starts continuous presence monitoring. Locks screen when you walk away.
 
 **Examples:**
+
 ```bash
 # Start as background daemon
 face-auth start-monitor
@@ -280,12 +297,14 @@ face-auth status
 ```
 
 **Output:**
+
 - Number of enrolled users
 - Monitoring daemon status
 - D-Bus service status
 - Configuration file location
 
 **Example:**
+
 ```bash
 $ face-auth status
 ==========================================
@@ -311,6 +330,7 @@ face-auth camera-test
 **Description:** Lists available cameras and allows testing
 
 **Interactive:**
+
 - Lists all detected cameras
 - Shows resolution and FPS
 - Allows live testing
@@ -327,6 +347,7 @@ face-auth validate-config
 **Description:** Checks configuration file for errors
 
 **Output:**
+
 - Configuration file location
 - Validation status
 - Any errors or warnings
@@ -340,11 +361,13 @@ face-auth config [SUBCOMMAND]
 ```
 
 **Subcommands:**
+
 - `show` - Display current configuration
 - `edit` - Open configuration in editor
 - `reload` - Reload configuration
 
 **Examples:**
+
 ```bash
 # Show current config
 face-auth config show
@@ -363,6 +386,7 @@ face-auth config reload
 ### Configuration File Location
 
 **Priority order:**
+
 1. `~/.config/face-auth/config.yaml` (user config)
 2. `./config.yaml` (project directory - example)
 
@@ -371,92 +395,103 @@ face-auth config reload
 ```yaml
 # Camera Settings
 camera:
-  device_id: 0                    # Camera device (int or path)
-                                  # Examples: 0, "/dev/video0", 
-                                  # "/dev/v4l/by-path/..."
-  width: 640                      # Frame width in pixels
-  height: 480                     # Frame height in pixels
-  fps: 30                         # Frames per second
+  device_id:
+    0 # Camera device (int or path)
+    # Examples: 0, "/dev/video0",
+    # "/dev/v4l/by-path/..."
+  width: 640 # Frame width in pixels
+  height: 480 # Frame height in pixels
+  fps: 30 # Frames per second
 
 # Face Recognition Settings
 recognition:
-  tolerance: 0.6                  # Match tolerance (0.0-1.0)
-                                  # Lower = stricter matching
-                                  # 0.4 = very strict
-                                  # 0.6 = balanced (recommended)
-                                  # 0.8 = lenient
-  
-  model: "hog"                    # Detection model
-                                  # "hog" = faster, CPU-based
-                                  # "cnn" = more accurate, GPU-based
-  
-  num_jitters: 1                  # Re-sampling count (1-10)
-                                  # Higher = more accurate but slower
-                                  # 1 = fast (recommended)
-                                  # 5 = very accurate
-  
-  security_mode: "balanced"       # Security level
-                                  # "fast"     - tolerance 0.7, 1 match
-                                  # "balanced" - tolerance 0.6, 2 matches
-                                  # "secure"   - tolerance 0.5, 3 matches
-  
+  tolerance:
+    0.6 # Match tolerance (0.0-1.0)
+    # Lower = stricter matching
+    # 0.4 = very strict
+    # 0.6 = balanced (recommended)
+    # 0.8 = lenient
+
+  model:
+    "hog" # Detection model
+    # "hog" = faster, CPU-based
+    # "cnn" = more accurate, GPU-based
+
+  num_jitters:
+    1 # Re-sampling count (1-10)
+    # Higher = more accurate but slower
+    # 1 = fast (recommended)
+    # 5 = very accurate
+
+  security_mode:
+    "balanced" # Security level
+    # "fast"     - tolerance 0.7, 1 match
+    # "balanced" - tolerance 0.6, 2 matches
+    # "secure"   - tolerance 0.5, 3 matches
+
   # Performance tuning
-  scale_factor: 0.5               # Downscale for faster detection
-                                  # 0.25 = fastest (lower accuracy)
-                                  # 0.5 = balanced (recommended)
-                                  # 1.0 = full resolution (slowest)
-  
-  try_rotations: false            # Try 90°/180°/270° rotations
-                                  # true = handles rotated camera/device
-                                  # false = faster, upright faces only
+  scale_factor:
+    0.5 # Downscale for faster detection
+    # 0.25 = fastest (lower accuracy)
+    # 0.5 = balanced (recommended)
+    # 1.0 = full resolution (slowest)
+
+  try_rotations:
+    false # Try 90°/180°/270° rotations
+    # true = handles rotated camera/device
+    # false = faster, upright faces only
 
 # Enrollment Settings
 enrollment:
-  num_samples: 5                  # Samples to capture (3-20)
-                                  # 5 = recommended
-                                  # 10 = better accuracy
-  
-  sample_delay: 1.0               # Seconds between samples
+  num_samples:
+    5 # Samples to capture (3-20)
+    # 5 = recommended
+    # 10 = better accuracy
+
+  sample_delay: 1.0 # Seconds between samples
 
 # Monitoring Settings
 monitoring:
-  enabled: true                   # Enable/disable monitoring
-  
-  check_interval: 2.0             # Seconds between checks
-                                  # Lower = more responsive, more CPU
-                                  # 2.0 = recommended
-                                  # 5.0 = battery saving
-  
-  absence_timeout: 30.0           # Seconds before lock
-                                  # 30 = recommended
-                                  # 60 = less aggressive
-  
-  presence_timeout: 5.0           # Seconds to cancel lock
+  enabled: true # Enable/disable monitoring
+
+  check_interval:
+    2.0 # Seconds between checks
+    # Lower = more responsive, more CPU
+    # 2.0 = recommended
+    # 5.0 = battery saving
+
+  absence_timeout:
+    30.0 # Seconds before lock
+    # 30 = recommended
+    # 60 = less aggressive
+
+  presence_timeout: 5.0 # Seconds to cancel lock
 
 # Actions
 actions:
-  on_absence:                     # When user leaves
-    - lock_screen                 # Lock the screen
+  on_absence: # When user leaves
+    - lock_screen # Lock the screen
     # - suspend                   # Suspend system
     # - custom_script: /path/to/script.sh
-  
-  on_presence:                    # When user returns
-    - log                         # Log the event
+
+  on_presence: # When user returns
+    - log # Log the event
     # - custom_script: /path/to/script.sh
-  
-  on_auth_success:                # Successful authentication
+
+  on_auth_success: # Successful authentication
     - log
-  
-  on_auth_failure:                # Failed authentication
+
+  on_auth_failure: # Failed authentication
     - log
 
 # Security Settings
 security:
-  max_auth_attempts: 3            # Max attempts before lockout
-  lockout_duration: 300           # Lockout seconds (5 minutes)
-  require_liveness: false         # Anti-spoofing (experimental)
-                                  # true = harder to fool with photos
-                                  # false = faster, less secure
+  max_auth_attempts: 3 # Max attempts before lockout
+  lockout_duration: 300 # Lockout seconds (5 minutes)
+  require_liveness:
+    false # Anti-spoofing (experimental)
+    # true = harder to fool with photos
+    # false = faster, less secure
 
 # Database Settings
 database:
@@ -464,23 +499,23 @@ database:
 
 # Logging Settings
 logging:
-  level: "INFO"                   # DEBUG, INFO, WARNING, ERROR, CRITICAL
+  level: "INFO" # DEBUG, INFO, WARNING, ERROR, CRITICAL
   file: "~/.local/share/face-auth/face_auth.log"
-  max_size: 10485760              # 10MB
-  backup_count: 3                 # Keep 3 old logs
+  max_size: 10485760 # 10MB
+  backup_count: 3 # Keep 3 old logs
 
 # D-Bus Settings
 dbus:
-  enabled: true                   # Enable D-Bus service
+  enabled: true # Enable D-Bus service
   service_name: "org.faceauth.Service"
   object_path: "/org/faceauth/Service"
 
 # Event Hooks (scripts to run)
 hooks:
-  on_presence: []                 # Scripts on presence
-  on_absence: []                  # Scripts on absence
-  on_auth_success: []             # Scripts on auth success
-  on_auth_failure: []             # Scripts on auth failure
+  on_presence: [] # Scripts on presence
+  on_absence: [] # Scripts on absence
+  on_auth_success: [] # Scripts on auth success
+  on_auth_failure: [] # Scripts on auth failure
 ```
 
 ### Configuration Examples
@@ -508,7 +543,7 @@ recognition:
 
 monitoring:
   check_interval: 5.0
-  
+
 camera:
   width: 320
   height: 240
@@ -543,18 +578,19 @@ TPM (if available):
 
 ### What's Stored
 
-| Data | Location | Encrypted | Description |
-|------|----------|-----------|-------------|
-| Face encodings | `face_auth.db` | ✅ Yes | 128-D vectors, Fernet encrypted |
-| User metadata | `face_auth.db` | ❌ No | Username, dates (not sensitive) |
-| Auth logs | `face_auth.db` | ❌ No | Success/fail, timestamps |
-| Encryption key | `.encryption_key` or TPM | ❌ No | Fernet key (600 permissions) |
-| Configuration | `config.yaml` | ❌ No | User settings |
-| Application logs | `face_auth.log` | ❌ No | Debug/info logs |
+| Data             | Location                 | Encrypted | Description                     |
+| ---------------- | ------------------------ | --------- | ------------------------------- |
+| Face encodings   | `face_auth.db`           | ✅ Yes    | 128-D vectors, Fernet encrypted |
+| User metadata    | `face_auth.db`           | ❌ No     | Username, dates (not sensitive) |
+| Auth logs        | `face_auth.db`           | ❌ No     | Success/fail, timestamps        |
+| Encryption key   | `.encryption_key` or TPM | ❌ No     | Fernet key (600 permissions)    |
+| Configuration    | `config.yaml`            | ❌ No     | User settings                   |
+| Application logs | `face_auth.log`          | ❌ No     | Debug/info logs                 |
 
 ### Data Privacy
 
 **What's NOT stored:**
+
 - ❌ Raw face images
 - ❌ Passwords
 - ❌ Unencrypted biometric data
@@ -577,11 +613,11 @@ TPM (if available):
 
 ### Security Modes Comparison
 
-| Mode | Tolerance | Min Matches | Speed | Security | Use Case |
-|------|-----------|-------------|-------|----------|----------|
-| **Fast** | 0.7 | 1 sample | ~1-2s | Low | Quick unlock, low risk |
-| **Balanced** | 0.6 | 2 samples | ~2-3s | Medium | General use ⭐ |
-| **Secure** | 0.5 | 3 samples | ~3-5s | High | Sensitive data |
+| Mode         | Tolerance | Min Matches | Speed | Security | Use Case               |
+| ------------ | --------- | ----------- | ----- | -------- | ---------------------- |
+| **Fast**     | 0.7       | 1 sample    | ~1-2s | Low      | Quick unlock, low risk |
+| **Balanced** | 0.6       | 2 samples   | ~2-3s | Medium   | General use ⭐         |
+| **Secure**   | 0.5       | 3 samples   | ~3-5s | High     | Sensitive data         |
 
 ### TPM Integration
 
@@ -593,6 +629,7 @@ TPM (if available):
 - Requires `tpm2-tools` package
 
 **Install TPM tools:**
+
 ```bash
 # Fedora
 sudo dnf install tpm2-tools
@@ -618,13 +655,13 @@ sudo pacman -S tpm2-tools
 
 ### Features
 
-| Tab | Features |
-|-----|----------|
+| Tab           | Features                                    |
+| ------------- | ------------------------------------------- |
 | **Dashboard** | System status, quick actions (enroll, test) |
-| **Users** | List users, add/remove, view details |
-| **Samples** | View samples, add/remove individual samples |
-| **Settings** | View configuration, reload settings |
-| **Logs** | Authentication history, success/failure |
+| **Users**     | List users, add/remove, view details        |
+| **Samples**   | View samples, add/remove individual samples |
+| **Settings**  | View configuration, reload settings         |
+| **Logs**      | Authentication history, success/failure     |
 
 ---
 
@@ -664,16 +701,19 @@ face_status                      # System status
 ## 🐛 Known Issues
 
 ### Security Limitations
+
 - ❌ Can be fooled by photos (liveness detection experimental)
 - ❌ Similar faces may authenticate
 - ⚠️ Not password-equivalent security
 
 ### Hardware Limitations
+
 - ❌ No IR camera support (unlike Howdy)
 - ⚠️ Some USB cameras may not work
 - ⚠️ Performance varies (1-10s depending on hardware)
 
 ### Software Limitations
+
 - ⚠️ Python 3.14 compatibility (workarounds in place)
 - ⚠️ Memory usage (~200MB + 50MB/user)
 - ⚠️ CPU-intensive during recognition
@@ -702,6 +742,7 @@ face_status                      # System status
 ```
 
 **What it does:**
+
 1. Creates Python virtual environment
 2. Installs dependencies
 3. Sets up configuration
@@ -738,6 +779,7 @@ Contributions welcome! Please:
 6. Open Pull Request
 
 **Run tests before submitting:**
+
 ```bash
 ./run_tests.sh
 ```
@@ -749,6 +791,7 @@ Contributions welcome! Please:
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for full details.
 
 **Key Points:**
+
 - ✅ Free to use, modify, and distribute
 - ✅ Commercial use allowed
 - ⚠️ Provided "AS IS" without warranty
@@ -769,8 +812,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 📞 Support
 
 - 📖 [Documentation](docs/)
-- 🐛 [Issue Tracker](https://github.com/YOUR_USERNAME/linux-hello/issues)
-- 💬 [Discussions](https://github.com/YOUR_USERNAME/linux-hello/discussions)
+- 🐛 [Issue Tracker](https://github.com/rexackermann/linux-hello/issues)
+- 💬 [Discussions](https://github.com/rexackermann/linux-hello/discussions)
 
 ---
 
