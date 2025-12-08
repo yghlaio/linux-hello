@@ -114,7 +114,7 @@ Face Authentication Bash Library
 
 Usage:
   Source this file in your bash script:
-    source /path/to/face-auth.sh
+    source /opt/linux-hello/face-auth.sh
 
 Available Functions:
   face_auth [timeout]

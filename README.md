@@ -58,12 +58,14 @@
 git clone https://github.com/YOUR_USERNAME/linux-hello.git
 cd linux-hello
 
-# Run installation script
-./install.sh
+# Run installation (auto-copies to /opt/linux-hello when using sudo)
+sudo ./install.sh
 
-# Add to PATH (add to ~/.bashrc for persistence)
-export PATH="$HOME/.local/bin:$PATH"
+# (Optional) Install PAM module for sudo/GDM login
+sudo ./pam/install_pam.sh
 ```
+
+> **Note:** Running with `sudo` automatically installs to `/opt/linux-hello` with proper permissions for GDM login screen support.
 
 ### First Steps
 

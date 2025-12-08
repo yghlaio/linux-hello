@@ -20,7 +20,28 @@ else
 fi
 
 # Get script directory
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SOURCE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+INSTALL_DIR="/opt/linux-hello"
+
+# For system install, copy to /opt if not already there
+if [ "$INSTALL_MODE" = "system" ] && [ "$SOURCE_DIR" != "$INSTALL_DIR" ]; then
+    echo
+    echo "📦 Relocating to $INSTALL_DIR for system-wide access..."
+    
+    # Create /opt/linux-hello if needed
+    mkdir -p "$INSTALL_DIR"
+    
+    # Copy all files (excluding venv which will be recreated)
+    rsync -a --exclude='venv' --exclude='.git' --exclude='__pycache__' \
+          --exclude='*.pyc' --exclude='.cache' "$SOURCE_DIR/" "$INSTALL_DIR/"
+    
+    echo "✓ Copied to $INSTALL_DIR"
+    
+    # Use the new location
+    SCRIPT_DIR="$INSTALL_DIR"
+else
+    SCRIPT_DIR="$SOURCE_DIR"
+fi
 
 echo
 echo "Step 1: Installing system dependencies..."
@@ -101,7 +122,22 @@ echo
 echo "✓ Python dependencies installed"
 
 echo
-echo "Step 3: Configuring system..."
+echo "Step 3: Setting permissions for PAM/GDM access..."
+echo
+
+# Make venv accessible to all users (required for GDM/PAM)
+if [ "$INSTALL_MODE" = "system" ]; then
+    echo "Setting world-readable permissions for venv..."
+    chmod -R o+rX "$SCRIPT_DIR/venv"
+    chmod o+rx "$SCRIPT_DIR"
+    chmod o+r "$SCRIPT_DIR"/*.py
+    echo "✓ Permissions set for GDM/PAM access"
+else
+    echo "⚠️  User-mode install: GDM/PAM may not work without sudo ./install.sh"
+fi
+
+echo
+echo "Step 4: Configuring system..."
 echo
 
 # Directory creation is handled by the application at runtime

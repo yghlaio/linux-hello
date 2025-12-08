@@ -13,7 +13,7 @@ The face authentication system is now configured to use your camera at:
 
 ```bash
 #!/bin/bash
-source /path/to/linux-hello/face-auth.sh
+source /opt/linux-hello/face-auth.sh
 
 # Authenticate user
 if face_auth 10; then
@@ -30,7 +30,7 @@ fi
 
 ```bash
 #!/bin/bash
-cd /path/to/linux-hello
+cd /opt/linux-hello
 
 # Authenticate
 if ./venv/bin/python3 cli.py test --timeout 10 --no-preview; then
@@ -166,21 +166,21 @@ fi
 
 Pre-built example scripts are available in the `examples/` directory:
 
-1. **[auth_gate.sh](file:///path/to/linux-hello/examples/auth_gate.sh)**
+1. **[auth_gate.sh](file:///opt/linux-hello/examples/auth_gate.sh)**
    - Simple authentication gate
    - Demonstrates basic usage
 
-2. **[user_specific.sh](file:///path/to/linux-hello/examples/user_specific.sh)**
+2. **[user_specific.sh](file:///opt/linux-hello/examples/user_specific.sh)**
    - User-specific actions
    - Shows how to run different commands per user
 
-3. **[enroll_user.sh](file:///path/to/linux-hello/examples/enroll_user.sh)**
+3. **[enroll_user.sh](file:///opt/linux-hello/examples/enroll_user.sh)**
    - Interactive enrollment script
    - Easy way to enroll new users
 
 Run them:
 ```bash
-cd /path/to/linux-hello
+cd /opt/linux-hello
 ./examples/auth_gate.sh
 ./examples/user_specific.sh
 ./examples/enroll_user.sh
@@ -240,7 +240,7 @@ Before using in scripts, you need to:
 
 1. **Install dependencies** (if not already done):
    ```bash
-   cd /path/to/linux-hello
+   cd /opt/linux-hello
    ./install.sh
    ```
 
@@ -289,7 +289,7 @@ recognition:
 
 ## Notes
 
-- All operations stay within `/path/to/linux-hello`
+- All operations stay within `/opt/linux-hello`
 - No system files are modified
 - Database and logs are created in `~/.local/share/face-auth/` on first use
 - No PAM integration - purely script-based
