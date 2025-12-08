@@ -49,7 +49,7 @@ class FaceAuthenticator:
     
     def open_camera(self) -> bool:
         """
-        Open camera device
+        Open camera device with retry logic
         
         Returns:
             True if successful, False otherwise
@@ -57,18 +57,27 @@ class FaceAuthenticator:
         if self.camera is not None and self.camera.isOpened():
             return True
         
-        self.camera = cv2.VideoCapture(self.camera_id)
+        max_retries = 2
+        retry_delay = 0.3  # seconds - fast fail for PAM
         
-        if not self.camera.isOpened():
-            logger.error(f"Failed to open camera {self.camera_id}")
-            return False
+        for attempt in range(max_retries):
+            self.camera = cv2.VideoCapture(self.camera_id)
+            
+            if self.camera.isOpened():
+                # Set camera properties
+                self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, self.camera_width)
+                self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, self.camera_height)
+                logger.info(f"Opened camera {self.camera_id}")
+                return True
+            
+            # Camera not available, retry after delay
+            if attempt < max_retries - 1:
+                logger.warning(f"Camera {self.camera_id} unavailable, retry {attempt + 1}/{max_retries}...")
+                time.sleep(retry_delay)
+                retry_delay *= 2  # Exponential backoff
         
-        # Set camera properties
-        self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, self.camera_width)
-        self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, self.camera_height)
-        
-        logger.info(f"Opened camera {self.camera_id}")
-        return True
+        logger.error(f"Failed to open camera {self.camera_id} after {max_retries} attempts")
+        return False
     
     def close_camera(self) -> None:
         """Close camera device"""

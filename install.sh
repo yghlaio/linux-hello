@@ -58,29 +58,29 @@ install_system_deps() {
         echo "Detected Fedora/RHEL - using dnf"
         if [ "$INSTALL_MODE" = "system" ]; then
             dnf install -y openblas openblas-devel blas blas-devel lapack lapack-devel \
-                cmake gcc gcc-c++ python3-devel \
+                cmake gcc gcc-c++ python3-devel python3-dbus dbus-devel \
                 libX11-devel gtk3-devel || echo "⚠️  Some packages may have failed to install"
         else
-            echo "Required packages: openblas openblas-devel blas blas-devel lapack lapack-devel cmake gcc gcc-c++ python3-devel"
-            echo "Install manually: sudo dnf install openblas openblas-devel blas blas-devel lapack lapack-devel cmake gcc gcc-c++ python3-devel"
+            echo "Required packages: openblas openblas-devel blas blas-devel lapack lapack-devel cmake gcc gcc-c++ python3-devel python3-dbus dbus-devel"
+            echo "Install manually: sudo dnf install openblas openblas-devel blas blas-devel lapack lapack-devel cmake gcc gcc-c++ python3-devel python3-dbus dbus-devel"
         fi
     elif command -v apt-get &> /dev/null; then
         echo "Detected Debian/Ubuntu - using apt"
         if [ "$INSTALL_MODE" = "system" ]; then
             apt-get update
             apt-get install -y libopenblas-dev cmake build-essential python3-dev \
-                libx11-dev libgtk-3-dev || echo "⚠️  Some packages may have failed to install"
+                python3-dbus libdbus-1-dev libx11-dev libgtk-3-dev || echo "⚠️  Some packages may have failed to install"
         else
-            echo "Required packages: libopenblas-dev cmake build-essential python3-dev"
-            echo "Install manually: sudo apt install libopenblas-dev cmake build-essential python3-dev"
+            echo "Required packages: libopenblas-dev cmake build-essential python3-dev python3-dbus libdbus-1-dev"
+            echo "Install manually: sudo apt install libopenblas-dev cmake build-essential python3-dev python3-dbus libdbus-1-dev"
         fi
     elif command -v pacman &> /dev/null; then
         echo "Detected Arch Linux - using pacman"
         if [ "$INSTALL_MODE" = "system" ]; then
-            pacman -Sy --noconfirm openblas cmake gcc python || echo "⚠️  Some packages may have failed to install"
+            pacman -Sy --noconfirm openblas cmake gcc python python-dbus || echo "⚠️  Some packages may have failed to install"
         else
-            echo "Required packages: openblas cmake gcc python"
-            echo "Install manually: sudo pacman -S openblas cmake gcc python"
+            echo "Required packages: openblas cmake gcc python python-dbus"
+            echo "Install manually: sudo pacman -S openblas cmake gcc python python-dbus"
         fi
     else
         echo "⚠️  Unknown package manager. Please ensure these libraries are installed:"
@@ -110,7 +110,7 @@ if [ -d "$SCRIPT_DIR/venv" ]; then
 else
     echo "Creating virtual environment..."
     # Use --copies to avoid symlink issues on shared folders (VMs)
-    python3 -m venv --copies "$SCRIPT_DIR/venv"
+    python3 -m venv --copies --system-site-packages "$SCRIPT_DIR/venv"
     source "$SCRIPT_DIR/venv/bin/activate"
 fi
 

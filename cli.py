@@ -58,11 +58,28 @@ def drop_privileges():
 
 def setup_logging(verbose: bool = False):
     """Setup logging configuration"""
+    config = get_config()
+    log_file = config.get('logging.file')
+    
+    handlers = [logging.StreamHandler(sys.stderr)]
+    
+    if log_file:
+        try:
+            # Ensure log directory exists
+            log_path = Path(log_file)
+            log_path.parent.mkdir(parents=True, exist_ok=True)
+            handlers.append(logging.FileHandler(log_file))
+        except Exception as e:
+            # Fallback if we can't write to log file
+            print(f"Warning: Could not setup log file: {e}", file=sys.stderr)
+
     level = logging.DEBUG if verbose else logging.INFO
     logging.basicConfig(
         level=level,
         format='%(asctime)s - %(levelname)s - %(message)s',
-        datefmt='%H:%M:%S'
+        datefmt='%H:%M:%S',
+        handlers=handlers,
+        force=True
     )
 
 
@@ -192,10 +209,16 @@ def cmd_pam_authenticate(args):
     
     print(f"Face Auth: Authenticating {pam_user}...")
     
+    # Quick camera check - fail fast if camera not available
+    if not authenticator.open_camera():
+        print("Face Auth: Camera not available, skipping.")
+        return 1  # Fail fast so password can be used
+    authenticator.close_camera()
+    
     # Start authentication (no preview for PAM)
-    # Use a shorter timeout for PAM to avoid stalling boot too long
+    # Use a short timeout so users can fall back to password quickly
     success, username, confidence = authenticator.authenticate(
-        timeout=10,
+        timeout=5,  # Short timeout for PAM
         show_preview=False
     )
     

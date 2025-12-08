@@ -35,7 +35,26 @@ echo "Step 1: Checking dependencies..."
 # Check for pam_exec.so validation is done later
 echo "✅ Dependencies OK"
 
-echo "✅ Dependencies OK"
+echo
+echo "Step 1.5: Granting camera access to GDM..."
+
+# Add gdm user to video group so it can access the camera
+if id gdm &>/dev/null; then
+    usermod -a -G video gdm
+    echo "✅ Added gdm user to video group"
+fi
+
+# Also add current user just in case
+if [ -n "$SUDO_USER" ]; then
+    usermod -a -G video "$SUDO_USER"
+    echo "✅ Added $SUDO_USER to video group"
+fi
+
+# Create udev rule to ensure camera is accessible to video group
+echo "Creating udev rule for camera access..."
+echo 'KERNEL=="video*", GROUP="video", MODE="0660"' > /etc/udev/rules.d/99-face-auth-video.rules
+udevadm control --reload-rules && udevadm trigger
+echo "✅ Applied udev rules for /dev/video*"
 
 echo
 echo "Step 2: Installing PAM module..."
@@ -79,6 +98,24 @@ fi
 
 echo "Using face-auth command: $FACE_AUTH_CMD"
 
+# Deploy wrapper script
+WRAPPER_SRC="$SCRIPT_DIR/face-auth-pam-wrapper.sh"
+# When running as sudo, we want to install to /usr/local/bin for all users
+# or explicitly to the real user's home transparency if user mode
+if [ "$EUID" -eq 0 ]; then
+    WRAPPER_DEST="/usr/local/bin/face-auth-pam-wrapper"
+else
+    # This branch is technically unreachable due to check at start of script
+    # but kept for completeness / potential future non-root install
+    mkdir -p "$HOME/.local/bin"
+    WRAPPER_DEST="$HOME/.local/bin/face-auth-pam-wrapper"
+fi
+
+echo "Installing PAM wrapper script to $WRAPPER_DEST..."
+cp "$WRAPPER_SRC" "$WRAPPER_DEST"
+chmod +x "$WRAPPER_DEST"
+chmod o+rx "$WRAPPER_DEST"  # Ensure world readable/executable for PAM
+
 # Helper function to configure PAM file
 configure_pam_file() {
     local file=$1
@@ -108,16 +145,16 @@ configure_pam_file() {
         sed -i '/pam_python.so/d' "$file"
     fi
     
-    # Clean up existing pam_exec lines to ensure fresh config
-    # (Optional, but good for retries)
-    if grep -q "pam_exec.so.*cli.py" "$file"; then
-        sed -i '/pam_exec.so.*cli.py/d' "$file"
+    # Clean up ALL existing face-auth related PAM entries to prevent duplicates
+    # Match: pam_exec.so with cli.py, face-auth, pam-authenticate, OR face-auth-pam-wrapper
+    if grep -qE "pam_exec.so.*(cli\.py|face-auth|pam-authenticate|wrapper)" "$file"; then
+        echo "   Removing existing face-auth PAM entries..."
+        sed -i '/pam_exec.so.*\(cli\.py\|face-auth\|pam-authenticate\|wrapper\)/d' "$file"
     fi
     
     # The command to insert
-    # quiet = don't print annoying messages implies succes
-    # stdout = print output to stdout
-    PAM_CMD="auth    sufficient    pam_exec.so quiet stdout $FACE_AUTH_CMD pam-authenticate"
+    # Using async wrapper script
+    PAM_CMD="auth    [success=done default=ignore]    pam_exec.so quiet stdout $WRAPPER_DEST"
     
     # Try to insert before pam_unix.so
     if grep -q "pam_unix.so" "$file"; then
